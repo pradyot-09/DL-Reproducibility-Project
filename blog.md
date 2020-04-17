@@ -3,3 +3,15 @@
 
 ![Neural Networks](https://img.shields.io/badge/Neural%20Networks-Distillation-brightgreen)
 ![Reproducibility](https://img.shields.io/badge/Reproducibility-Blog-blue)
+
+## Introduction
+
+## Methodology
+
+## Experiment Setup
+
+
+## Results
+
+
+## References
