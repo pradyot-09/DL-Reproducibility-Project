@@ -27,7 +27,11 @@ On a more specific level:
 
   1. Cross Entropy Loss, used to match the input labels.
   
-  2. KL divergence, to match the softmax values produced by the teacher model with a high temperature T: [INSERT SOFTMAX FORMULA HERE]. As shown in [2], the KL divergence can be used to build an alternative definition of the Cross Entropy Loss.
+  2. KL divergence, to match the softmax values produced by the teacher model with a high temperature T :  
+  <div align="center">
+     <img src="https://render.githubusercontent.com/render/math?math=s_i%20%3D%20%5Cfrac%7Bz_i%2FT%7D%7B%5Csum_%7Bj%7Dexp(z_j%2FT)%7D" >
+  </div>
+As shown in [2], the KL divergence can be used to build an alternative definition of the Cross Entropy Loss.
   
   The best results have been obtained by giving more relevance to the teacher mimicking part of the loss.
   
