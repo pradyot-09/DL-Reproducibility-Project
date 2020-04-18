@@ -325,3 +325,5 @@ sn.heatmap(df_cm, annot=True)
 ## References
 
 [1] Hinton, Geoffrey, Oriol Vinyals, and Jeff Dean. "Distilling the knowledge in a neural network." arXiv preprint arXiv:1503.02531 (2015).
+
+[2] Tim Hopper. Cross Entropy and KL Divergence. url:https://tdhopper.com/blog/cross-entropy-and-kl-divergence/.
