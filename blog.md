@@ -486,10 +486,18 @@ Epochs | 1000 | 1000 | 100
 
 
 ## Results
-First Header | Second Header
------------- | -------------
-Content from cell 1 | Content from cell 2
-Content in the first column | Content in the second column
+
+As we previously said, all our experiments were on the MNIST dataset, as specified in section 3 of the paper.
+
+The first thing we reproduced was the distillation from the teacher model to the student, by using the complete dataset. Our models training lasted 1000 epochs (where 1 epoch means that the entire dataset has been processed).
+Hereunder we compare authors results and ours:
+
+| Model | Hinton et al. | Foffano, Patil, Scholman |
+|:------:|:-------------:|:------------------------:|
+|Teacher (1200 hidden units)| 67 | 64 |
+|Student (800 hidden units)| 74 | 67 |
+
+
 
 ## References
 
