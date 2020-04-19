@@ -346,7 +346,7 @@ sn.heatmap(df_cm, annot=True)
 
 The code used by our CNN model is largely the same. The data is imported in the same way, with the same transformations as mentioned before. Therefor we of course will not go over these again and go straight to the CNN model's code itself:
 
-```
+```python
 class CNNModel(nn.Module):
 
     def __init__(self, hidden_size=128, dropout=0.25, hidden_dropout=0.5):
@@ -383,7 +383,7 @@ class CNNModel(nn.Module):
 
 The code to actually train the CNN model is also largely the same as the previous code showed:
 
-```
+```python
 # Setup model and move it to the GPU
 net = CNNModel()
 net.to(device)
@@ -427,7 +427,7 @@ print('Saved Model')
 ```
 
 The code to actually run the trained network is also largely similar to the previously shown code:
-```
+```python
 # Instantiate model and load saved network parameters
 net = CNNModel(dropout=0.0, hidden_dropout=0.0)
 net.to(device)
