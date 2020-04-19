@@ -492,12 +492,48 @@ As we previously said, all our experiments were on the MNIST dataset, as specifi
 The first thing we reproduced was the distillation from the teacher model to the student, by using the complete dataset. Our models training lasted 1000 epochs (where 1 epoch means that the entire dataset has been processed).
 Hereunder we compare authors results and ours:
 
-| Model | Hinton et al. | Foffano, Patil, Scholman |
+| Model | Errors - Hinton et al. | Errors - Foffano, Patil, Scholman |
 |:------:|:-------------:|:------------------------:|
 |Teacher (1200 hidden units)| 67 | 64 |
 |Student (800 hidden units)| 74 | 67 |
 
+We can also examine the confusion matrices of both our teacher and student model.
 
+<table>
+  <tr>
+    <td align ="center">Teacher confusion matrix</td>
+    <td align ="center">Student confusion matrix</td>
+  </tr>
+  <tr>
+    <td><img src="https://github.com/pradyot-09/DL-Reproducibility-Project/blob/master/blog_images/Teacher_confusion_matrix.png"></td>
+    <td><img src="https://github.com/pradyot-09/DL-Reproducibility-Project/blob/master/blog_images/student_confusion_matrix.png"></td>
+  </tr>
+</table>
+
+As we can see, the mistakes made by the two models are very similar. This may be interpreted as the teacher transmitting also its misinformation to the student. Of course it might also be that the models are misclassifying more or less the same images because these are the hardest to classify (maybe they are wrote in a not clear way): we did not verify this because it seemed to be out of the scope of our reproduction task.
+
+We also tested the performance of the student network in case one of the digits was removed from the transfer set: we removed all the 3s, as the authors did.
+
+| Model trained without digit number 3 | Errors - Hinton et al. | Errors - Foffano, Patil, Scholman |
+|:------:|:-------------:|:------------------------:|
+|Student (800 hidden units)| 206 (of which 133 are about digit 3) | 161 (of which 2 are about digit 3) |
+
+<table>
+  <tr>
+    <td align ="center">Teacher confusion matrix</td>
+    <td align ="center">Student confusion matrix (no 3s in transfer set)</td>
+  </tr>
+  <tr>
+    <td><img src="https://github.com/pradyot-09/DL-Reproducibility-Project/blob/master/blog_images/Teacher_confusion_matrix.png"></td>
+    <td><img src="https://github.com/pradyot-09/DL-Reproducibility-Project/blob/master/blog_images/student_confusion_matrix_no3.png"></td>
+  </tr>
+</table>
+
+We can see that there is a great difference between the authors and our results. However, the authors also state that by increasing the prior on the 3 digit class, the errors obtained by the student drop to 109 of which 14 are on 3s. 
+
+## Conclusions
+
+Comparing the small differences between what the authors and our group achieved, we conclude that the paper results can be reproduced.
 
 ## References
 
