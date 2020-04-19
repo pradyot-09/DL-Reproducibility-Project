@@ -6,13 +6,17 @@
 
 ## Introduction
 
-The aim of this project was to reproduce results from section 3 of [1]. In addition, we compared the efficiency of the Feed Forward Network used by the authors with that of a Convolutional Neural Network.
+The aim of this project was to reproduce results from section 3 of [1]. In addition, we compared the efficiency of the Feed Forward Network (FFN) used by the authors with that of a Convolutional Neural Network (CNN). This CNN was created by ourselves in an extra effort to try and outperform the original results.
 
 Distillation is a technique aiming to transfer the knowledge acquired by a cumbersome model (teacher) to a simpler one (student): very complex models could be computationally expensive to deploy in a production environment, hence the advantage of having a smaller and lighter model with the same knowledge.
 
 We will start by describing how we structured our teacher and student models and how did we train the latter to mimic the former. Then we will describe our experiments and results, comparing these to the authors achievements.
 
 ## Methodology
+
+In this section we will first describe the workings of the knowledge distillation for the Feed Forward Network used to reproduce the original results. Later on in this section the CNN model will be described.
+
+### Feed Forward Network Knowledge Distillation
 
 As we said, we aim to distilling the knowledge of a complex model (teacher) into a simpler one (student).
 
@@ -35,7 +39,28 @@ As shown in [2], the KL divergence can be used to build an alternative definitio
   
   The best results have been obtained by giving more relevance to the teacher mimicking part of the loss.
   
-## Code
+The total setup for the Teacher-Student network model can be seen in the image below, in which all of the loss functions mentioned above have been combined into a neat overview:
+![Teacher-student network setup](teaser.png)
+
+### Convolutional Neural Networks and our CNN Architecture
+
+A conventional FFN has the ability to mimic a very large range of functions. In theory it should be capable of mimicing nearly every function possible. However, this is very hard due to the complex nature of the FFN. The complexity stems from the many parameters this model can learn, since every layer can be seen as a huge matrix multiplication for which every of the weights needs to be learned. This makes it very hard for the FFN to actually mimic real life functions as there are so many possibilities.
+
+In come the CNN's. These networks make use of layers that are very restricted in their complexity. As each convolutional layer in a CNN can be seen as a matrix multiplication with a Toeplitz matrix. These matrices have the special property that they are diagonal-constant matrices, meaning that the numbers on the diagonal axis from the top left to bottom right are exactly the same. This restricts the number of parameters each of these CNN layers has to learn dramatically. Thereby making them easier to optimize since they have a lot lower complexity.
+
+These CNN's also have the property that, by using such a Toeplitz matrix, they scan the input with a convulutional kernel. These kernels give way to being able to detect certain patterns in the input. This allows CNN's to be very well tailored for image classification whereby image features, and thereby patterns in these images, can be extracted by its convolutional layers.
+
+As we are to classify handwritten digits the CNN's seemed to be a very good choice to use. This was further emphased by [4], where Urban et al argue that there is a so-called Convolutional-gap which Feed Forward Networks cannot overcome. At least not in the field of image classification. Therefor we have decided to create a CNN, for which we came up with the following architecture:
+
+1. Two convolutional layers, each with a kernel size of 5. The first has a padding of 4 to get back to the original image size, the second a stride of 2. The last convolutional layer is followed by a max pool of size 2x2.
+2. Three feed forward layers, each gradually reducing in size of 768 to 256 and lastly 10. In between each of these layers we applied the same regularization techniques used in the teacher-student setup, applying 20% dropout to the input of the first feed forward layer and 50% dropout on the input of the second feed forward layer.
+
+Each of the layers mentioned above has the added element of using ReLU activation functions before passing its tensor to the next layer.
+
+During training this entire model is trained with the Adam optimizer with Cross Entropy Loss. The Adam optimizer also uses a small amount of weight decay to further regularize the network.
+
+  
+## Code of Teacher and Student Feed Forward Networks
 
 We implemented our reproduction code in Python, and the following libraries are required:
 
@@ -317,14 +342,161 @@ plt.figure(figsize = (10,7))
 sn.heatmap(df_cm, annot=True)
 ```
 
+## Code of Convolutional Neural Network
+
+The code used by our CNN model is largely the same. The data is imported in the same way, with the same transformations as mentioned before. Therefor we of course will not go over these again and go straight to the CNN model's code itself:
+
+```
+class CNNModel(nn.Module):
+
+    def __init__(self, hidden_size=128, dropout=0.25, hidden_dropout=0.5):
+        super(CNNModel, self).__init__()
+        self.conv1 = nn.Conv2d(1, 8, kernel_size=5, padding=4)
+        self.conv2 = nn.Conv2d(8,16, kernel_size=5, stride=2)
+        self.dropout1 = nn.Dropout2d(dropout)
+        self.dropout2 = nn.Dropout2d(hidden_dropout)
+        self.fc1 = nn.Linear(784, hidden_size*2)
+        self.fc2 = nn.Linear(hidden_size*2, hidden_size)
+        self.fc3 = nn.Linear(hidden_size, 10)
+
+    def forward(self, x):
+        # First convolution and activation
+        x = self.conv1(x)
+        x = F.relu(x)
+        # Second convolution, max pool and activation
+        x = self.conv2(x)
+        x = F.max_pool2d(x, 2)
+        x = F.relu(x)
+        # Flatten input into 1d tensor and random dropout to increase generalization
+        x = torch.flatten(x, 1)
+        x = self.dropout1(x)
+        # First FFN layer, activation and dropout
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.dropout2(x)
+        # Second FFN layer and activation
+        x = self.fc2(x)
+        x = F.relu(x)
+        # Last FFN layer
+        return self.fc3(x)
+```
+
+The code to actually train the CNN model is also largely the same as the previous code showed:
+
+```
+# Setup model and move it to the GPU
+net = CNNModel()
+net.to(device)
+
+# Set up loss function and optimizer:
+criterion = torch.nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(net.parameters(), lr=0.0001, weight_decay=0.00001)
+
+# Run over 100 epochs (1 epoch = visited all items in dataset)
+for epoch in range(100):
+    running_loss = 0.0
+    total = 0
+    for i, (inputs, labels) in enumerate(trainloader, 0):
+        # get the inputs; data is a list of [inputs, labels]
+        inputs = inputs.to(device)
+        target = labels.to(device).long()
+
+        # zero the parameter gradients
+        optimizer.zero_grad()
+
+        # forward + backward + optimize
+        outputs = net(inputs)
+        loss = criterion(outputs, target)
+        loss.backward()
+        optimizer.step()
+
+        total += len(inputs)
+
+        # print statistics
+        running_loss += loss.item()
+    # print every epoch
+    print('[%d] loss: %.3f' % (epoch + 1, running_loss / total))
+
+print('Finished Training')
+
+# Save model after having finished training
+PATH = './cnn_mnist_dropout_100_epoch.pth'
+torch.save(net.state_dict(), PATH)
+
+print('Saved Model')
+```
+
+The code to actually run the trained network is also largely similar to the previously shown code:
+```
+# Instantiate model and load saved network parameters
+net = CNNModel(dropout=0.0, hidden_dropout=0.0)
+net.to(device)
+net.load_state_dict(torch.load(PATH))
+
+# Run model on test set and determine accuracy
+correct = 0
+total = 0
+wrong = np.zeros((10,10))
+with torch.no_grad():
+    for (inputs, labels) in testloader:
+        inputs = inputs.to(device)
+        target = labels.to(device)
+        outputs = net(inputs)
+        predicted = torch.argmax(outputs.data, 1)
+        target = target.data
+        total += target.size(0)
+        correct += (predicted == target).sum().item()
+        for i, val in enumerate(predicted):
+          if val != target[i]:
+            wrong[target[i]][val] += 1
+
+
+# Output model accuracy to user
+print('Accuracy of the network on the 10000 test images: %f %% (%d wrong out of %d)' % (
+    100 * correct / total, total - correct, total))
+    
+# Plot the confusion matrix
+df_cm = pd.DataFrame(wrong, index = [i for i in "0123456789"],
+                  columns = [i for i in "0123456789"])
+plt.figure(figsize = (10,7))
+sn.heatmap(df_cm, annot=True)
+```
+
 ## Experiment Setup
+Much of the experimental setup can already be deducted from the code shown above. However just for clarity we will summarize the most important elements here in this section.
+
+### Dataset
+The dataset we are using is the MNIST dataset of handwritten digits [3]. This dataset consists of 60.000 training image of the handwritten digits 0,1,...,9. Next to this training set, there is also a test set of 10.000 images. The images from the training set where jittered by up to 2 pixels in any direction for more generalization. An example of the digits found in this dataset can be seen in the image below.
+
+![Image of MNIST digits (source Wikipedia)](https://upload.wikimedia.org/wikipedia/commons/2/27/MnistExamples.png)
+
+In another version of our experiments we checked what would happen if we were to remove one of digits, as the original authors did in their paper. We chose to remove the same number from the training set, the number 3, without removing it from the actual test set. Therefor the model would be forced to classify a digit it has actually never seen before.
+
+### Network parameters
+
+Each of our models has to be trained and tested with certain parameters, therefor we have summed up the most important paremeters in a table here.
+
+Parameter | Teacher | Student | CNN
+------------ | ------------- | ------------- | -------------
+Optimizer | SGD | SGD | Adam
+Learning rate| 0.01 (x 0.5 decay every 100 epochs) | 0.001 | 0.0001
+Loss fn | Cross Entropy | Cross Entropy + KL Div | Cross Entropy
+Hidden size | 1200 | 800 | Not applicable
+Epochs | 1000 | 1000 | 100
 
 
 ## Results
-
+First Header | Second Header
+------------ | -------------
+Content from cell 1 | Content from cell 2
+Content in the first column | Content in the second column
 
 ## References
 
 [1] Hinton, Geoffrey, Oriol Vinyals, and Jeff Dean. "Distilling the knowledge in a neural network." arXiv preprint arXiv:1503.02531 (2015).
 
 [2] Tim Hopper. Cross Entropy and KL Divergence. url:https://tdhopper.com/blog/cross-entropy-and-kl-divergence/.
+
+[3] Yann Lecun et al. Gradient-Based Learning Applied to Document Recognition. Dec. 1998. doi:10.1109/5.726791.
+
+[4] Gregor Urban et al. Do Deep Convolutional Nets Really Need to be Deep and Convolutional? 2016. arXiv:1603.05691
