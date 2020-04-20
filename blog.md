@@ -62,27 +62,7 @@ During training this entire model is trained with the Adam optimizer with Cross 
   
 ## Code of Teacher and Student Feed Forward Networks
 
-We implemented our reproduction code in Python, and the following libraries are required:
-
-```python
-# Import pytorch basic functions/classes
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-
-# Import torchvision functions/classes for MNIST import and data loaders
-import torchvision
-import torchvision.transforms as transforms
-
-# Other imports
-import pandas as pd
-import seaborn as sn
-import numpy as np
-import matplotlib.pyplot as plt
-```
-
-Now we can start by defining the model for our two Feed Forward Networks (the number of hidden units can be set through the constructor method):
+Now we can start by defining the model for our two Feed Forward Networks (the number of hidden units and dropout chance can be set through the constructor method):
 
 ```python
 # Define MLP model and its layers
@@ -107,6 +87,28 @@ class Model(nn.Module):
         x = self.hidden3(x)
         return x
 ```
+
+For the teacher model we also incorporated learning rate decay with the following formula:
+
+```python
+if(epoch % 100 == 0 and epoch != 0):
+  learning_rate = learning_rate * 0.5
+  optimizer = optim.SGD(net.parameters(), lr= learning_rate, momentum=0.9)
+```
+
+We instantiate the training of the teacher model with the following parameters, whereby we move the model to the graphics card straight after instantiation as these perform far better:
+```python
+# Setup model and move it to the GPU
+net = Model(dropout=0.2, hidden_dropout=0.5)
+net.to(device)
+
+# Set up loss function and optimizer:
+learning_rate = 0.01
+criterion = torch.nn.CrossEntropyLoss()
+optimizer = optim.SGD(net.parameters(), lr= learning_rate, momentum=0.9)
+```
+
+Now, once we have reached a good performance on the test set with the teacher model, we can use the teacher model to train the student.
 The custom loss function for the student model will be:
 
 ```python
@@ -119,141 +121,7 @@ def student_loss(outputs, labels, teacher_outputs, alpha, temperature):
     return KD_loss
 ```
 
-We can then import the MNIST training and test set. We apply jittering of at most two pixels to the training set by using the RandomAffine transformation:
-
-```python
-# Define transform from PIL image to tensor and normalize to 1x768 pixels
-train_transform = transforms.Compose([
-  transforms.RandomAffine(0, (1/14, 1/14)),
-  transforms.ToTensor(),
-  transforms.Normalize((0.5,), (0.5,))
-])
-
-test_transform = transforms.Compose([
-  transforms.ToTensor(),
-  transforms.Normalize((0.5,), (0.5,))
-])
-
-# Set batch size for data loaders
-batch_size = 128
-
-# (Down)load training set
-trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=train_transform)
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
-
-# (Down)load test set
-testset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=test_transform)
-testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=2)
-
-# (Down)load training set without a specific digit
-trainset_noDigit = torchvision.datasets.MNIST(root='./data', train=True, download=True)
-
-#   Set here the digit to exclude
-idx = trainset_noDigit.train_labels!=3
-
-trainset_noDigit.targets = trainset_noDigit.targets[idx]
-trainset_noDigit.data = trainset_noDigit.data[idx]
-trainset_noDigit.transform = train_transform
-
-trainloader_noDigit = torch.utils.data.DataLoader(trainset_noDigit, batch_size=batch_size, shuffle=True, num_workers=2)
-```
-
-And now we can train our teacher model:
-
-```python
-# Setup model and move it to the GPU
-net = Model(dropout=0.2, hidden_dropout=0.5)
-net.to(device)
-
-# Set up loss function and optimizer: 
-#     using cross entropy loss because it's better for classification task
-
-learning_rate = 0.01
-criterion = torch.nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(), lr= learning_rate, momentum=0.9)
-
-# Run over 100 epochs (1 epoch = visited all items in dataset)
-for epoch in range(1000):
-
-    running_loss = 0.0
-    total = 0
-
-    if(epoch%100 == 0 and epoch != 0):
-
-      learning_rate = learning_rate * 0.5
-      optimizer = optim.SGD(net.parameters(), lr= learning_rate, momentum=0.9)
-
-    for i, data in enumerate(trainloader, 0):
-        
-
-        # get the inputs; data is a list of [inputs, labels]
-        inputs, labels = data
-        inputs = torch.flatten(inputs, start_dim=1).to(device)
-
-        # zero the parameter gradients
-        optimizer.zero_grad()
-
-        # forward + backward + optimize
-        outputs = net(inputs)
-        target = labels.to(device).long()
-        loss = criterion(outputs, target)
-        loss.backward()
-        optimizer.step()
-
-        total += len(data)
-
-        # print statistics
-        running_loss += loss.item()
-    # print every epoch
-    print('[%d] loss: %.3f' % (epoch + 1, running_loss / total))
-
-print('Finished Training')
-
-# Save model after having finished training
-PATH = './mnist_dropout_100_epoch.pth'
-torch.save(net.state_dict(), PATH)
-
-print('Saved Model')
-```
-
-And checking its performance on the test set:
-
-```python
-# Instantiate model and load saved network parameters
-net = Model().to(device)
-net.load_state_dict(torch.load(PATH))
-
-# Run model on test set and determine accuracy
-correct = 0
-total = 0
-wrong = np.zeros((10,10))
-
-with torch.no_grad():
-    for data in testloader:
-        inputs, labels = data
-        inputs = torch.flatten(inputs, start_dim=1).to(device)
-        target = convert_labels(labels).to(device)
-        outputs = net(inputs)
-        _, predicted = torch.max(outputs.data, 1)
-        _, target = torch.max(target.data, 1)
-        total += target.size(0)
-        correct += (predicted == target).sum().item()
-        for i, val in enumerate(predicted):
-          if val != target[i]:
-            wrong[target[i]][val] += 1
-
-# Output model accuracy to user
-print('Accuracy of the network on the 10000 test images: %d %% (%d wrong out of %d)' % (
-    100 * correct / total, total - correct, total))
-
-# Plot confusion matrix
-df_cm = pd.DataFrame(wrong, index = [i for i in "0123456789"],
-                  columns = [i for i in "0123456789"])
-plt.figure(figsize = (10,7))
-sn.heatmap(df_cm, annot=True)
-```
-
-Now, once we have reached a good performance on the test set, we can use the teacher model to train the student:
+The training of the student is then initialized in the following manner, where we use the above student_loss function to compute loss during the training:
 
 ```python
 # Setup student model and move it to the GPU
@@ -261,85 +129,7 @@ student_net = Model(hidden_size = 800)
 student_net.to(device)
 
 # Set up loss function and optimizer
-
 optimizer = optim.SGD(student_net.parameters(), lr=0.001, momentum=0.9)
-
-# Run over 100 epochs (1 epoch = visited all items in dataset)
-for epoch in range(1000):
-    running_loss = 0.0
-    total = 0
-    for i, data in enumerate(trainloader, 0):
-        # get the inputs; data is a list of [inputs, labels]
-        inputs, labels = data
-        inputs = torch.flatten(inputs, start_dim=1).to(device)
-        target = labels.to(device).long()
-        
-        # zero the parameter gradients
-        optimizer.zero_grad()
-
-        # Set temperature and the weights for losses linear combination
-        w = 0.7
-        T = 20
-
-        # Compute soft labels using deep teacher model previously trained
-        outputs_teacher = net(inputs)
-
-        # Student forward + backward + optimize
-        outputs_stud = student_net(inputs)
-        
-        loss = student_loss(outputs_stud, target, outputs_teacher, w, T)
-        loss.backward()
-        optimizer.step()
-
-        total += len(data)
-
-        # print statistics
-        running_loss += loss.item()
-    # print every epoch
-    print('[%d] loss: %.3f' % (epoch + 1, running_loss / total))
-
-print('Finished Training')
-
-# Save model after having finished training
-STUD_PATH = './mnist_student_100_epoch.pth'
-torch.save(student_net.state_dict(), STUD_PATH)
-
-print('Saved Model')
-```
-
-And finally we can check the accuracy of the student on the test set:
-
-```python
-stud_net = Model(hidden_size = 800).to(device)
-stud_net.load_state_dict(torch.load(STUD_PATH))
-
-# Run model on test set and determine accuracy
-correct = 0
-total = 0
-wrong = np.zeros((10,10))
-with torch.no_grad():
-    for data in testloader:
-        inputs, labels = data
-        inputs = torch.flatten(inputs, start_dim=1).to(device)
-        target = convert_labels(labels).to(device)
-        outputs = stud_net(inputs)
-        _, predicted = torch.max(outputs.data, 1)
-        _, target = torch.max(target.data, 1)
-        total += target.size(0)
-        correct += (predicted == target).sum().item()
-        for i, val in enumerate(predicted):
-          if val != target[i]:
-            wrong[target[i]][val] += 1
-
-# Output model accuracy to user
-print('Accuracy of the network on the 10000 test images: %d %% (%d wrong out of %d)' % (
-    100 * correct / total, total - correct, total))
-
-# Plot confusion matrix
-df_cm = pd.DataFrame(wrong, index = [i for i in "0123456789"],
-                  columns = [i for i in "0123456789"])
-plt.figure(figsize = (10,7))
-sn.heatmap(df_cm, annot=True)
 ```
 
 ## Code of Convolutional Neural Network
@@ -381,7 +171,7 @@ class CNNModel(nn.Module):
         return self.fc3(x)
 ```
 
-The code to actually train the CNN model is also largely the same as the previous code showed:
+The code to instantiate the CNN model for training is also largely the same as the previous code showed:
 
 ```python
 # Setup model and move it to the GPU
@@ -391,75 +181,6 @@ net.to(device)
 # Set up loss function and optimizer:
 criterion = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(net.parameters(), lr=0.0001, weight_decay=0.00001)
-
-# Run over 100 epochs (1 epoch = visited all items in dataset)
-for epoch in range(100):
-    running_loss = 0.0
-    total = 0
-    for i, (inputs, labels) in enumerate(trainloader, 0):
-        # get the inputs; data is a list of [inputs, labels]
-        inputs = inputs.to(device)
-        target = labels.to(device).long()
-
-        # zero the parameter gradients
-        optimizer.zero_grad()
-
-        # forward + backward + optimize
-        outputs = net(inputs)
-        loss = criterion(outputs, target)
-        loss.backward()
-        optimizer.step()
-
-        total += len(inputs)
-
-        # print statistics
-        running_loss += loss.item()
-    # print every epoch
-    print('[%d] loss: %.3f' % (epoch + 1, running_loss / total))
-
-print('Finished Training')
-
-# Save model after having finished training
-PATH = './cnn_mnist_dropout_100_epoch.pth'
-torch.save(net.state_dict(), PATH)
-
-print('Saved Model')
-```
-
-The code to actually run the trained network is also largely similar to the previously shown code:
-```python
-# Instantiate model and load saved network parameters
-net = CNNModel(dropout=0.0, hidden_dropout=0.0)
-net.to(device)
-net.load_state_dict(torch.load(PATH))
-
-# Run model on test set and determine accuracy
-correct = 0
-total = 0
-wrong = np.zeros((10,10))
-with torch.no_grad():
-    for (inputs, labels) in testloader:
-        inputs = inputs.to(device)
-        target = labels.to(device)
-        outputs = net(inputs)
-        predicted = torch.argmax(outputs.data, 1)
-        target = target.data
-        total += target.size(0)
-        correct += (predicted == target).sum().item()
-        for i, val in enumerate(predicted):
-          if val != target[i]:
-            wrong[target[i]][val] += 1
-
-
-# Output model accuracy to user
-print('Accuracy of the network on the 10000 test images: %f %% (%d wrong out of %d)' % (
-    100 * correct / total, total - correct, total))
-    
-# Plot the confusion matrix
-df_cm = pd.DataFrame(wrong, index = [i for i in "0123456789"],
-                  columns = [i for i in "0123456789"])
-plt.figure(figsize = (10,7))
-sn.heatmap(df_cm, annot=True)
 ```
 
 ## Experiment Setup
@@ -544,3 +265,326 @@ Comparing the small differences between what the authors and our group achieved,
 [3] Yann Lecun et al. Gradient-Based Learning Applied to Document Recognition. Dec. 1998. doi:10.1109/5.726791.
 
 [4] Gregor Urban et al. Do Deep Convolutional Nets Really Need to be Deep and Convolutional? 2016. arXiv:1603.05691
+
+## Appendix with code
+
+We implemented our reproduction code in Python and the following libraries are required:
+
+```python
+# Import pytorch basic functions/classes
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+
+# Import torchvision functions/classes for MNIST import and data loaders
+import torchvision
+import torchvision.transforms as transforms
+
+# Other imports
+import pandas as pd
+import seaborn as sn
+import numpy as np
+import matplotlib.pyplot as plt
+```
+
+We can then import the MNIST training and test set. We apply jittering of at most two pixels to the training set by using the RandomAffine transformation:
+
+```python
+# Define transform from PIL image to tensor and normalize to 1x768 pixels
+train_transform = transforms.Compose([
+  transforms.RandomAffine(0, (1/14, 1/14)),
+  transforms.ToTensor(),
+  transforms.Normalize((0.5,), (0.5,))
+])
+
+test_transform = transforms.Compose([
+  transforms.ToTensor(),
+  transforms.Normalize((0.5,), (0.5,))
+])
+
+# Set batch size for data loaders
+batch_size = 128
+
+# (Down)load training set
+trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=train_transform)
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
+
+# (Down)load test set
+testset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=test_transform)
+testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=2)
+
+# (Down)load training set without a specific digit
+trainset_noDigit = torchvision.datasets.MNIST(root='./data', train=True, download=True)
+
+#   Set here the digit to exclude
+idx = trainset_noDigit.train_labels!=3
+
+trainset_noDigit.targets = trainset_noDigit.targets[idx]
+trainset_noDigit.data = trainset_noDigit.data[idx]
+trainset_noDigit.transform = train_transform
+
+trainloader_noDigit = torch.utils.data.DataLoader(trainset_noDigit, batch_size=batch_size, shuffle=True, num_workers=2)
+```
+
+### Teacher and student Feed Forward Network code
+Full code to train the teacher model:
+```python
+# Setup model and move it to the GPU
+net = Model(dropout=0.2, hidden_dropout=0.5)
+net.to(device)
+
+# Set up loss function and optimizer: 
+#     using cross entropy loss because it's better for classification task
+
+learning_rate = 0.01
+criterion = torch.nn.CrossEntropyLoss()
+optimizer = optim.SGD(net.parameters(), lr= learning_rate, momentum=0.9)
+
+# Run over 100 epochs (1 epoch = visited all items in dataset)
+for epoch in range(1000):
+
+    running_loss = 0.0
+    total = 0
+
+    for i, data in enumerate(trainloader, 0):
+        # Apply the learning rate decay
+        if(epoch % 100 == 0 and epoch != 0):
+            learning_rate = learning_rate * 0.5
+            optimizer = optim.SGD(net.parameters(), lr= learning_rate, momentum=0.9)
+
+        # get the inputs; data is a list of [inputs, labels]
+        inputs, labels = data
+        inputs = torch.flatten(inputs, start_dim=1).to(device)
+
+        # zero the parameter gradients
+        optimizer.zero_grad()
+
+        # forward + backward + optimize
+        outputs = net(inputs)
+        target = labels.to(device).long()
+        loss = criterion(outputs, target)
+        loss.backward()
+        optimizer.step()
+
+        total += len(data)
+
+        # print statistics
+        running_loss += loss.item()
+    # print every epoch
+    print('[%d] loss: %.3f' % (epoch + 1, running_loss / total))
+
+print('Finished Training')
+
+# Save model after having finished training
+PATH = './mnist_dropout_100_epoch.pth'
+torch.save(net.state_dict(), PATH)
+
+print('Saved Model')
+```
+
+Checking the teacher models performance on the test set:
+
+```python
+# Instantiate model and load saved network parameters
+net = Model().to(device)
+net.load_state_dict(torch.load(PATH))
+
+# Run model on test set and determine accuracy
+correct = 0
+total = 0
+wrong = np.zeros((10,10))
+
+with torch.no_grad():
+    for data in testloader:
+        inputs, labels = data
+        inputs = torch.flatten(inputs, start_dim=1).to(device)
+        target = convert_labels(labels).to(device)
+        outputs = net(inputs)
+        _, predicted = torch.max(outputs.data, 1)
+        _, target = torch.max(target.data, 1)
+        total += target.size(0)
+        correct += (predicted == target).sum().item()
+        for i, val in enumerate(predicted):
+          if val != target[i]:
+            wrong[target[i]][val] += 1
+
+# Output model accuracy to user
+print('Accuracy of the network on the 10000 test images: %d %% (%d wrong out of %d)' % (
+    100 * correct / total, total - correct, total))
+
+# Plot confusion matrix
+df_cm = pd.DataFrame(wrong, index = [i for i in "0123456789"],
+                  columns = [i for i in "0123456789"])
+plt.figure(figsize = (10,7))
+sn.heatmap(df_cm, annot=True)
+```
+
+The entire code to train the student model, using the previously mentioned student_loss function in the code section above:
+
+```python
+# Setup student model and move it to the GPU
+student_net = Model(hidden_size = 800)
+student_net.to(device)
+
+# Set up loss function and optimizer
+optimizer = optim.SGD(student_net.parameters(), lr=0.001, momentum=0.9)
+
+# Run over 100 epochs (1 epoch = visited all items in dataset)
+for epoch in range(1000):
+    running_loss = 0.0
+    total = 0
+    for i, data in enumerate(trainloader, 0):
+        # get the inputs; data is a list of [inputs, labels]
+        inputs, labels = data
+        inputs = torch.flatten(inputs, start_dim=1).to(device)
+        target = labels.to(device).long()
+        
+        # zero the parameter gradients
+        optimizer.zero_grad()
+
+        # Set temperature and the weights for losses linear combination
+        w = 0.7
+        T = 20
+
+        # Compute soft labels using deep teacher model previously trained
+        outputs_teacher = net(inputs)
+
+        # Student forward + backward + optimize
+        outputs_stud = student_net(inputs)
+        
+        loss = student_loss(outputs_stud, target, outputs_teacher, w, T)
+        loss.backward()
+        optimizer.step()
+
+        total += len(data)
+
+        # print statistics
+        running_loss += loss.item()
+    # print every epoch
+    print('[%d] loss: %.3f' % (epoch + 1, running_loss / total))
+
+print('Finished Training')
+
+# Save model after having finished training
+STUD_PATH = './mnist_student_100_epoch.pth'
+torch.save(student_net.state_dict(), STUD_PATH)
+
+print('Saved Model')
+```
+
+And finally we can check the accuracy of the student on the test set:
+
+```python
+stud_net = Model(hidden_size = 800).to(device)
+stud_net.load_state_dict(torch.load(STUD_PATH))
+
+# Run model on test set and determine accuracy
+correct = 0
+total = 0
+wrong = np.zeros((10,10))
+with torch.no_grad():
+    for data in testloader:
+        inputs, labels = data
+        inputs = torch.flatten(inputs, start_dim=1).to(device)
+        target = convert_labels(labels).to(device)
+        outputs = stud_net(inputs)
+        _, predicted = torch.max(outputs.data, 1)
+        _, target = torch.max(target.data, 1)
+        total += target.size(0)
+        correct += (predicted == target).sum().item()
+        for i, val in enumerate(predicted):
+          if val != target[i]:
+            wrong[target[i]][val] += 1
+
+# Output model accuracy to user
+print('Accuracy of the network on the 10000 test images: %d %% (%d wrong out of %d)' % (
+    100 * correct / total, total - correct, total))
+
+# Plot confusion matrix
+df_cm = pd.DataFrame(wrong, index = [i for i in "0123456789"],
+                  columns = [i for i in "0123456789"])
+plt.figure(figsize = (10,7))
+sn.heatmap(df_cm, annot=True)
+```
+
+### Convolutional Neural Network code
+Below the code can be found to actually train the entire CNN model:
+```python
+# Setup model and move it to the GPU
+net = CNNModel()
+net.to(device)
+
+# Set up loss function and optimizer:
+criterion = torch.nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(net.parameters(), lr=0.0001, weight_decay=0.00001)
+
+# Run over 100 epochs (1 epoch = visited all items in dataset)
+for epoch in range(100):
+    running_loss = 0.0
+    total = 0
+    for i, (inputs, labels) in enumerate(trainloader, 0):
+        # get the inputs; data is a list of [inputs, labels]
+        inputs = inputs.to(device)
+        target = labels.to(device).long()
+
+        # zero the parameter gradients
+        optimizer.zero_grad()
+
+        # forward + backward + optimize
+        outputs = net(inputs)
+        loss = criterion(outputs, target)
+        loss.backward()
+        optimizer.step()
+
+        total += len(inputs)
+
+        # print statistics
+        running_loss += loss.item()
+    # print every epoch
+    print('[%d] loss: %.3f' % (epoch + 1, running_loss / total))
+
+print('Finished Training')
+
+# Save model after having finished training
+PATH = './cnn_mnist_dropout_100_epoch.pth'
+torch.save(net.state_dict(), PATH)
+
+print('Saved Model')
+```
+
+The code to actually run the trained network is also largely similar to the previously shown code:
+```python
+# Instantiate model and load saved network parameters
+net = CNNModel(dropout=0.0, hidden_dropout=0.0)
+net.to(device)
+net.load_state_dict(torch.load(PATH))
+
+# Run model on test set and determine accuracy
+correct = 0
+total = 0
+wrong = np.zeros((10,10))
+with torch.no_grad():
+    for (inputs, labels) in testloader:
+        inputs = inputs.to(device)
+        target = labels.to(device)
+        outputs = net(inputs)
+        predicted = torch.argmax(outputs.data, 1)
+        target = target.data
+        total += target.size(0)
+        correct += (predicted == target).sum().item()
+        for i, val in enumerate(predicted):
+          if val != target[i]:
+            wrong[target[i]][val] += 1
+
+
+# Output model accuracy to user
+print('Accuracy of the network on the 10000 test images: %f %% (%d wrong out of %d)' % (
+    100 * correct / total, total - correct, total))
+    
+# Plot the confusion matrix
+df_cm = pd.DataFrame(wrong, index = [i for i in "0123456789"],
+                  columns = [i for i in "0123456789"])
+plt.figure(figsize = (10,7))
+sn.heatmap(df_cm, annot=True)
+```
