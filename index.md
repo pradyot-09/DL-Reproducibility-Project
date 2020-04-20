@@ -276,6 +276,27 @@ The results for the CNN can be seen in the table below. In this table we compare
 |Student (800 hidden units)| 67 | 1000 |
 |CNN| 44 | 100 |
 
+
+For the CNN model we have also created a confusion matrix to see how this would compare to the FFN models. This confusion matrix can be seen in the image below.
+![CNN confusion matrix](blog_images/cnn_conf.png)
+
+When looking at this confusion matrix we can see that the errors still largely correspond to those from the confusion matrices of the FFN networks. Although the numbers do differ, in general the pattern seem to be similar. As two rather different networks show quite similar confusion patterns one starts to wonder if there is something more to the data that we have not found yet. Therefor it was interesting to look into the numbers that were misclassified. Maybe those are just simply very difficult to classify as we are talking about handwritten digits and not everyone's handwriting is always that easily readable. Below we show a few images which were misclassified.
+
+8 misclassified as 7
+![8 misclassified as 7](blog_images/7-8.png)
+
+2 misclassified as 7
+![2 misclassified as 7](blog_images/7-2.png)
+
+3 misclassified as 5
+![3 misclassified as 5](blog_images/5-3.png)
+
+Two times a 9 misclassified as a 4
+![9 misclassified as 4](blog_images/4-9.png)
+![9 also misclassified as 4](blog_images/4-9-2.png)
+
+When looking at these images and how they were misclassified, we personally would say it is safe to assume that we might have made the same mistakes. Some of these images are just really hard to read, even as a human. Especially the two images where the 9's were mistaken as a 4, each of us three would also read these as a 4 in a handwritten text.
+
 ## Conclusions
 
 Comparing the small differences between what the authors and our group achieved, we conclude that the paper results can be reproduced. We could both outperform the original papers results in a reproduction study as well as further improve on those results when we created our own model.
