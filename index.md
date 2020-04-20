@@ -278,9 +278,13 @@ The results for the CNN can be seen in the table below. In this table we compare
 
 
 For the CNN model we have also created a confusion matrix to see how this would compare to the FFN models. This confusion matrix can be seen in the image below.
-![CNN confusion matrix](blog_images/cnn_conf.png)
 
-When looking at this confusion matrix we can see that the errors still largely correspond to those from the confusion matrices of the FFN networks. Although the numbers do differ, in general the pattern seem to be similar. As two rather different networks show quite similar confusion patterns one starts to wonder if there is something more to the data that we have not found yet. Therefor it was interesting to look into the numbers that were misclassified. Maybe those are just simply very difficult to classify as we are talking about handwritten digits and not everyone's handwriting is always that easily readable. Below we show a few images which were misclassified.
+| CNN confusion matrix |
+|:------:|
+| ![CNN confusion matrix](blog_images/cnn_conf.png) |
+
+### Confusion and data quality
+When looking at the confusion matrix from the CNN above, we can see that the errors still largely correspond to those from the confusion matrices of the FFN networks. Although the numbers do differ, in general the pattern seem to be similar. As two rather different networks show quite similar confusion patterns one starts to wonder if there is something more to the data that we have not found yet. Therefor it was interesting to look into the numbers that were misclassified. Maybe those are just simply very difficult to classify as we are talking about handwritten digits and not everyone's handwriting is always that easily readable. Below we show a few images which were misclassified.
 
 | Correct number | Erroneously classified as | Example |
 |:------:|:-------------:|:------------------------:|
