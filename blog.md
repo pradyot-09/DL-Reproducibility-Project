@@ -4,6 +4,8 @@
 ![Neural Networks](https://img.shields.io/badge/Neural%20Networks-Distillation-brightgreen)
 ![Reproducibility](https://img.shields.io/badge/Reproducibility-Blog-blue)
 
+*Authors: Daniele Foffano (5040140), Pradyot Patil (5051592), Renzo Scholman (4952308)*
+
 ## Introduction
 
 Neural networks are a widespread phenomenon now with numerous variants which have been devised in the recent years. They are part of the deep learning research field which is growing at a rapid rate with lots of research being published every year. However, one downside to this sometimes is that the newly developed model tends to be quite large in size and require huge amounts of computation power to run. This is of course not an issue in a research setting where, usually, there is enough computation power available. Once we start looking at production environments, this does indeed become an issue.
