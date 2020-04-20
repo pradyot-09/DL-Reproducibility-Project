@@ -14,7 +14,9 @@ There has been some research into this topic of knowledge distilation in the for
 
 Thus, distillation is a technique aiming to transfer the knowledge acquired by a cumbersome model (teacher) to a simpler one (student): very complex models could be computationally expensive to deploy in a production environment, hence the advantage of having a smaller and lighter model with the same knowledge.
 
-We will start by describing how we structured our teacher and student models and how did we train the latter to mimic the former. Then we will describe our experiments and results, comparing these to the authors achievements.
+Before we get into the contents of what we've tried to reproduce and how exactly, we want to tell you that we have done this reproduction study as part of a course of the Computer Science Master at the Technical University of Delft, the Netherlands. We, among others, have reproduced one of many papers. All of these reproduction studies can be found behind the following link: https://reproducedpapers.org/. All of these papers are reproduced by these Master students and we would like to ask you to check out their efforts as well, there are really a lot of interesting ones among them!
+
+Now to get back to our own reproduction effort. We will start by describing how we structured our teacher and student models and how did we train the latter to mimic the former in the next section about our methodology. In this same section we will also elaborate on the CNN we created ourselves to outperform the FFN. Then we will describe our experimental setup and lastly the results, which we also compare to the authors achievements.
 
 ## Methodology
 
