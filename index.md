@@ -14,15 +14,15 @@ title: Deep Learning: Reproducibility Project
 
 ## Introduction
 
-Neural networks are a widespread phenomenon now with numerous variants which have been devised in the recent years. They are part of the deep learning research field which is growing at a rapid rate with lots of research being published every year. However, one downside to this sometimes is that the newly developed model tends to be quite large in size and require huge amounts of computation power to run. This is of course not an issue in a research setting where, usually, there is enough computation power available. Once we start looking at production environments, this does indeed become an issue.
+Neural networks are a widespread phenomenon now, with numerous variants which have been devised in the recent years. They are part of the deep learning research field which is growing at a rapid rate with lots of research being published every year. However, one downside to this sometimes is that the newly developed model tends to be quite large in size and require huge amounts of computational power to run. This is of course not an issue in a research setting where, usually, there is enough computation power available. Once we start looking at production environments, this does indeed become an issue.
 
-In production environments the networks need to run reliably and fast in the case there are time constraints. Furthermore, the systems used in production environments are usually a bit slower than the large workstations or even gpu servers used in research. Therefor running large, elaborate, models on limited hardware is not always possible. The best solution would be to take some of the knowledge gained by the large models in research settings and transferring that knowledge to simpler models that can run on more limited hardware in those production environments. The transfer of this knowledge can be seen as so called "knowledge distillation" of teacher models into student models.
+In production environments the networks need to run reliably and fast in the case there are time constraints. Furthermore, the systems used in production environments are usually a bit slower than the large workstations or even gpu servers used in research. Therefore, running large, elaborate, models on limited hardware is not always possible. The best solution would be to take some of the knowledge gained by the large models in research settings and transferring it to simpler models that can run on more limited hardware in production environments. The transfer of this knowledge can be seen as so called "knowledge distillation" of teacher models into student models.
 
-There has been some research into this topic of knowledge distilation in the form of [1]. The aim of this project was to reproduce results from section 3 of [1]. In addition, we compared the efficiency of the Feed Forward Network (FFN) used by the authors with that of a Convolutional Neural Network (CNN). This CNN was created by ourselves in an extra effort to try and outperform the original results.
+The aim of this project was to reproduce results from section 3 of [1]. In addition, we compared the efficiency of the Feed Forward Network (FFN) used by the authors with that of a Convolutional Neural Network (CNN). This CNN was created by ourselves in an extra effort to try and outperform the original results.
 
 Thus, distillation is a technique aiming to transfer the knowledge acquired by a cumbersome model (teacher) to a simpler one (student): very complex models could be computationally expensive to deploy in a production environment, hence the advantage of having a smaller and lighter model with the same knowledge.
 
-Before we get into the contents of what we've tried to reproduce and how exactly, we want to tell you that we have done this reproduction study as part of a course of the Computer Science Master at the Technical University of Delft, the Netherlands. We, among others, have reproduced one of many papers. All of these reproduction studies can be found behind the following link: https://reproducedpapers.org/. All of these papers are reproduced by these Master students and we would like to ask you to check out their efforts as well, there are really a lot of interesting ones among them!
+Before we get into the contents of what we have tried to reproduce and how exactly, we want to tell you that we have done this reproduction study as part of a course of the Computer Science Master at the Technical University of Delft (Netherlands). We, among others, have reproduced one of many papers. All of these reproduction studies can be found behind the following link: https://reproducedpapers.org/. All of these papers are reproduced by these Master students and we would like to ask you to check out their efforts as well, there are really a lot of interesting ones among them!
 
 Now to get back to our own reproduction effort. We will start by describing how we structured our teacher and student models and how did we train the latter to mimic the former in the next section about our methodology. In this same section we will also elaborate on the CNN we created ourselves to outperform the FFN. Then we will describe our experimental setup and lastly the results, which we also compare to the authors achievements.
 
@@ -58,20 +58,20 @@ The total setup for the Teacher-Student network model can be seen in the image b
 
 ### Convolutional Neural Networks and our CNN Architecture
 
-A conventional FFN has the ability to mimic a very large range of functions. In theory it should be capable of mimicing nearly every function possible. However, this is very hard due to the complex nature of the FFN. The complexity stems from the many parameters this model can learn, since every layer can be seen as a huge matrix multiplication for which every of the weights needs to be learned. This makes it very hard for the FFN to actually mimic real life functions as there are so many possibilities.
+A conventional FFN has the ability to mimic a very large range of functions. In theory, it should be capable of mimicking nearly every function possible. However, this is very hard due to the complex nature of the FFN. The complexity stems from the many parameters this model can learn, since every layer can be seen as a huge matrix multiplication for which every of the weights needs to be learned. This makes it very hard for the FFN to actually mimic real life functions, as there are so many possibilities.
 
-In come the CNN's. These networks make use of layers that are very restricted in their complexity. As each convolutional layer in a CNN can be seen as a matrix multiplication with a Toeplitz matrix. These matrices have the special property that they are diagonal-constant matrices, meaning that the numbers on the diagonal axis from the top left to bottom right are exactly the same. This restricts the number of parameters each of these CNN layers has to learn dramatically. Thereby making them easier to optimize since they have a lot lower complexity.
+Welcome CNNs. These networks make use of layers that are very restricted in their complexity: each convolutional layer in a CNN can be seen as a matrix multiplication with a Toeplitz matrix. These matrices are diagonal-constant matrices, meaning that the numbers on the diagonal axes from the top left to bottom right are exactly the same. This restricts the number of parameters each of these CNN layers has to learn dramatically. Thereby making them easier to optimize since they have a lot lower complexity.
 
-These CNN's also have the property that, by using such a Toeplitz matrix, they scan the input with a convulutional kernel. These kernels give way to being able to detect certain patterns in the input. This allows CNN's to be very well tailored for image classification whereby image features, and thereby patterns in these images, can be extracted by its convolutional layers.
+CNNs also have the property that, by using such a Toeplitz matrix, they scan the input with a convulutional kernel. These kernels enable the model to detect certain patterns in the input. This allows CNNs to be very well tailored for image classification whereby image features, and thereby patterns in these images, can be extracted by its convolutional layers.
 
-As we are to classify handwritten digits the CNN's seemed to be a very good choice to use. This was further emphased by [4], where Urban et al argue that there is a so-called Convolutional-gap which Feed Forward Networks cannot overcome. At least not in the field of image classification. Therefor we have decided to create a CNN, for which we came up with the following architecture:
+As we are to classify handwritten digits, the CNNs seemed to be a very good choice to use. This was further emphased by [4], where Urban et al. argue that there is a so-called Convolutional-gap which Feed Forward Networks cannot overcome. At least not in the field of image classification. Therefore, we have decided to create a CNN and we came up with the following architecture:
 
 1. Two convolutional layers, each with a kernel size of 5. The first has a padding of 4 to get back to the original image size, the second a stride of 2. The last convolutional layer is followed by a max pool of size 2x2.
 2. Three feed forward layers, each gradually reducing in size of 768 to 256 and lastly 10. In between each of these layers we applied the same regularization techniques used in the teacher-student setup, applying 20% dropout to the input of the first feed forward layer and 50% dropout on the input of the second feed forward layer.
 
 Each of the layers mentioned above has the added element of using ReLU activation functions before passing its tensor to the next layer.
 
-During training this entire model is trained with the Adam optimizer with Cross Entropy Loss. The Adam optimizer also uses a small amount of weight decay to further regularize the network.
+This model is trained with the Adam optimizer with Cross Entropy Loss. The Adam optimizer also uses a small amount of weight decay to further regularize the network.
 
   
 ## Code of Teacher and Student Feed Forward Networks
@@ -148,7 +148,7 @@ optimizer = optim.SGD(student_net.parameters(), lr=0.001, momentum=0.9)
 
 ## Code of Convolutional Neural Network
 
-The code used by our CNN model is largely the same. The data is imported in the same way, with the same transformations as mentioned before. Therefor we of course will not go over these again and go straight to the CNN model's code itself:
+The code used by our CNN model is largely the same. The data is imported in the same way, with the same transformations as mentioned before. Therefore, we will go straight to the CNN model's code itself:
 
 ```python
 class CNNModel(nn.Module):
@@ -198,18 +198,18 @@ optimizer = torch.optim.Adam(net.parameters(), lr=0.0001, weight_decay=0.00001)
 ```
 
 ## Experiment Setup
-Much of the experimental setup can already be deducted from the code shown above. However just for clarity we will summarize the most important elements here in this section.
+Much of the experimental setup can already be deducted from the code shown above. However, we will summarize the most important elements in this section.
 
 ### Dataset
-The dataset we are using is the MNIST dataset of handwritten digits [3]. This dataset consists of 60.000 training image of the handwritten digits 0,1,...,9. Next to this training set, there is also a test set of 10.000 images. The images from the training set where jittered by up to 2 pixels in any direction for more generalization. An example of the digits found in this dataset can be seen in the image below.
+The dataset we are using is the MNIST dataset of handwritten digits [3]. This dataset consists of 60.000 training image of the handwritten digits 0,1,...,9. Next to this training set, there is also a test set of 10.000 images. The images from the training set where jittered by up to 2 pixels in any direction for more robustness. An example of the digits found in this dataset can be seen in the image below.
 
 ![Image of MNIST digits (source Wikipedia)](https://upload.wikimedia.org/wikipedia/commons/2/27/MnistExamples.png)
 
-In another version of our experiments we checked what would happen if we were to remove one of digits, as the original authors did in their paper. We chose to remove the same number from the training set, the number 3, without removing it from the actual test set. Therefor the model would be forced to classify a digit it has actually never seen before.
+In another version of our experiments we checked what would happen if we were to remove one of digits, as the original authors did in their paper. We chose to remove the same number from the training set, the number 3, without removing it from the actual test set so that the student model was forced to classify a digit it had actually never seen before, relying just on the teacher knowledge.
 
 ### Network parameters
 
-Each of our models has to be trained and tested with certain parameters, therefor we have summed up the most important paremeters in a table here.
+Each of our models has to be trained and tested with certain parameters. We have summed up the most important paremeters in the following table.
 
 Parameter | Teacher | Student | CNN
 ------------ | ------------- | ------------- | -------------
@@ -233,7 +233,7 @@ Hereunder we compare authors results and ours:
 |Teacher (1200 hidden units)| 67 | 64 |
 |Student (800 hidden units)| 74 | 67 |
 
-We can also examine the confusion matrices of both our teacher and student model.
+We can also examine the confusion matrices of both our teacher and student model: the rows represent the correct label while the columns indicate the model prediction.
 
 <table>
   <tr>
@@ -246,13 +246,13 @@ We can also examine the confusion matrices of both our teacher and student model
   </tr>
 </table>
 
-As we can see, the mistakes made by the two models are very similar. This may be interpreted as the teacher transmitting also its misinformation to the student. Of course it might also be that the models are misclassifying more or less the same images because these are the hardest to classify (maybe they are wrote in a not clear way): we did not verify this because it seemed to be out of the scope of our reproduction task.
+As we can see, the mistakes made by the two models are very similar. This may be interpreted as the teacher transmitting also its misinformation to the student. Of course it might also be that the models are misclassifying more or less the same images because these are the hardest to classify (maybe they are wrote in a not clear way): we investigate this further in the CNN results section.
 
 We also tested the performance of the student network in case one of the digits was removed from the transfer set: we removed all the 3s, as the authors did.
 
 | Model trained without digit number 3 | Errors - Hinton et al. | Errors - Foffano, Patil, Scholman |
 |:------:|:-------------:|:------------------------:|
-|Student (800 hidden units)| 206 (of which 133 are about digit 3) | 161 (of which 2 are about digit 3) |
+|Student (800 hidden units)| 206 (of which 133 are about digit 3) | 161 (of which 102 are about digit 3) |
 
 <table>
   <tr>
@@ -265,10 +265,8 @@ We also tested the performance of the student network in case one of the digits 
   </tr>
 </table>
 
-We can see that there is a great difference between the authors and our results. However, the authors also state that by increasing the prior on the 3 digit class, the errors obtained by the student drop to 109 of which 14 are on 3s. 
-
 ### Convolutional Neural Network results (not reproduction)
-The results for the CNN can be seen in the table below. In this table we compare the CNN results to our own Teacher and Student models. What can be clearly deducted from the table is that CNN's outperform more conventional Feed Forward Networks by a lot on image classification. We manage to achieve just 44 errors on the test set of 10.000 images whilst using just 1/10th of the amount of epochs. Simply stated, the CNN outperforms the FFN models with minimal training effort.
+The results for the CNN can be seen in the table below. In this table we compare the CNN results to our own Teacher and Student models. What can be clearly deducted from the table is that CNNs outperform more conventional Feed Forward Networks by a lot on image classification. We manage to achieve just 44 errors on the test set of 10.000 images whilst using just 1/10th of the amount of epochs. Simply stated, the CNN outperforms the FFN models with minimal training effort.
 
 | Model | Errors | Epochs |
 |:------:|:-------------:|:------------------------:|
@@ -277,14 +275,14 @@ The results for the CNN can be seen in the table below. In this table we compare
 |CNN| 44 | 100 |
 
 
-For the CNN model we have also created a confusion matrix to see how this would compare to the FFN models. This confusion matrix can be seen in the image below.
+For the CNN model we have also created a confusion matrix to see how this would compare to the FFN models:
 
 | CNN confusion matrix |
 |:------:|
 | ![CNN confusion matrix](blog_images/cnn_conf.png) |
 
 ### Confusion and data quality
-When looking at the confusion matrix from the CNN above, we can see that the errors still largely correspond to those from the confusion matrices of the FFN networks. Although the numbers do differ, in general the pattern seem to be similar. As two rather different networks show quite similar confusion patterns one starts to wonder if there is something more to the data that we have not found yet. Therefor it was interesting to look into the numbers that were misclassified. Maybe those are just simply very difficult to classify as we are talking about handwritten digits and not everyone's handwriting is always that easily readable. Below we show a few images which were misclassified.
+When looking at the confusion matrix from the CNN, we can see that the errors still largely correspond to those from the confusion matrices of the FFN networks. Although the quantities do differ, in general the pattern seem to be similar. As two rather different networks show quite similar confusion patterns one may wonder if there is something more to the data that we have not found yet. It was interesting to look into the numbers that were misclassified: they might be very difficult to classify as not everyone's handwriting is easily readable. Below we show a few images which were misclassified.
 
 | Correct number | Erroneously classified as | Example |
 |:------:|:-------------:|:------------------------:|
@@ -294,7 +292,7 @@ When looking at the confusion matrix from the CNN above, we can see that the err
 | 9 | 4 | ![9 misclassified as 4](blog_images/4-9.png) |
 | 9 | 4 | ![9 misclassified as 4](blog_images/4-9-2.png) |
 
-When looking at these images and how they were misclassified, we personally would say it is safe to assume that we might have made the same mistakes. Some of these images are just really hard to read, even as a human. Especially the two images where the 9's were mistaken as a 4, each of us three would also read these as a 4 in a handwritten text.
+When looking at these images and how they were misclassified, we personally would say it is safe to assume that a human being might have made the same mistakes.
 
 ## Conclusions
 
@@ -464,7 +462,7 @@ plt.figure(figsize = (10,7))
 sn.heatmap(df_cm, annot=True)
 ```
 
-The entire code to train the student model, using the previously mentioned student_loss function in the code section above:
+The entire code to train the student model, using the student_loss function previously mentioned in the code section above:
 
 ```python
 # Setup student model and move it to the GPU
@@ -553,7 +551,7 @@ sn.heatmap(df_cm, annot=True)
 ```
 
 ### Convolutional Neural Network code
-Below the code can be found to actually train the entire CNN model:
+Follows the code to train the CNN model:
 ```python
 # Setup model and move it to the GPU
 net = CNNModel()
@@ -597,7 +595,7 @@ torch.save(net.state_dict(), PATH)
 print('Saved Model')
 ```
 
-The code to actually run the trained network is also largely similar to the previously shown code:
+The code to run the trained network is largely similar to the code used for the two FFNs:
 ```python
 # Instantiate model and load saved network parameters
 net = CNNModel(dropout=0.0, hidden_dropout=0.0)
