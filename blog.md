@@ -6,9 +6,13 @@
 
 ## Introduction
 
-The aim of this project was to reproduce results from section 3 of [1]. In addition, we compared the efficiency of the Feed Forward Network (FFN) used by the authors with that of a Convolutional Neural Network (CNN). This CNN was created by ourselves in an extra effort to try and outperform the original results.
+Neural networks are a widespread phenomenon now with numerous variants which have been devised in the recent years. They are part of the deep learning research field which is growing at a rapid rate with lots of research being published every year. However, one downside to this sometimes is that the newly developed model tends to be quite large in size and require huge amounts of computation power to run. This is of course not an issue in a research setting where, usually, there is enough computation power available. Once we start looking at production environments, this does indeed become an issue.
 
-Distillation is a technique aiming to transfer the knowledge acquired by a cumbersome model (teacher) to a simpler one (student): very complex models could be computationally expensive to deploy in a production environment, hence the advantage of having a smaller and lighter model with the same knowledge.
+In production environments the networks need to run reliably and fast in the case there are time constraints. Furthermore, the systems used in production environments are usually a bit slower than the large workstations or even gpu servers used in research. Therefor running large, elaborate, models on limited hardware is not always possible. The best solution would be to take some of the knowledge gained by the large models in research settings and transferring that knowledge to simpler models that can run on more limited hardware in those production environments. The transfer of this knowledge can be seen as so called "knowledge distillation" of teacher models into student models.
+
+There has been some research into this topic of knowledge distilation in the form of [1]. The aim of this project was to reproduce results from section 3 of [1]. In addition, we compared the efficiency of the Feed Forward Network (FFN) used by the authors with that of a Convolutional Neural Network (CNN). This CNN was created by ourselves in an extra effort to try and outperform the original results.
+
+Thus, distillation is a technique aiming to transfer the knowledge acquired by a cumbersome model (teacher) to a simpler one (student): very complex models could be computationally expensive to deploy in a production environment, hence the advantage of having a smaller and lighter model with the same knowledge.
 
 We will start by describing how we structured our teacher and student models and how did we train the latter to mimic the former. Then we will describe our experiments and results, comparing these to the authors achievements.
 
@@ -208,6 +212,7 @@ Epochs | 1000 | 1000 | 100
 
 ## Results
 
+### Teacher-student reproduction results
 As we previously said, all our experiments were on the MNIST dataset, as specified in section 3 of the paper.
 
 The first thing we reproduced was the distillation from the teacher model to the student, by using the complete dataset. Our models training lasted 1000 epochs (where 1 epoch means that the entire dataset has been processed).
@@ -252,9 +257,18 @@ We also tested the performance of the student network in case one of the digits 
 
 We can see that there is a great difference between the authors and our results. However, the authors also state that by increasing the prior on the 3 digit class, the errors obtained by the student drop to 109 of which 14 are on 3s. 
 
+### Convolutional Neural Network results (not reproduction)
+The results for the CNN can be seen in the table below. In this table we compare the CNN results to our own Teacher and Student models. What can be clearly deducted from the table is that CNN's outperform more conventional Feed Forward Networks by a lot on image classification. We manage to achieve just 44 errors on the test set of 10.000 images whilst using just 1/10th of the amount of epochs. Simply stated, the CNN outperforms the FFN models with minimal training effort.
+
+| Model | Errors | Epochs |
+|:------:|:-------------:|:------------------------:|
+|Teacher (1200 hidden units)| 64 | 1000 |
+|Student (800 hidden units)| 67 | 1000 |
+|CNN| 44 | 100 |
+
 ## Conclusions
 
-Comparing the small differences between what the authors and our group achieved, we conclude that the paper results can be reproduced.
+Comparing the small differences between what the authors and our group achieved, we conclude that the paper results can be reproduced. We could both outperform the original papers results in a reproduction study as well as further improve on those results when we created our own model.
 
 ## References
 
