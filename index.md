@@ -10,7 +10,7 @@ title: Deep Learning: Reproducibility Project
 ![Neural Networks](https://img.shields.io/badge/Neural%20Networks-Distillation-brightgreen)
 ![Reproducibility](https://img.shields.io/badge/Reproducibility-Blog-blue)
 
-*Authors: Daniele Foffano (5040140), Pradyot Patil (5051592), Renzo Scholman (4952308)*
+*Authors: Daniele Foffano (5040140, d.foffano@student.tudelft.nl), Pradyot Patil (5051592, p.s.patil@student.tudelft.nl), Renzo Scholman (4952308, r.j.scholman@student.tudelft.nl)*
 
 ## Introduction
 
