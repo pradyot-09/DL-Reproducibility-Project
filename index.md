@@ -240,8 +240,8 @@ We can also examine the confusion matrices of both our teacher and student model
     <td align ="center">Student confusion matrix</td>
   </tr>
   <tr>
-    <td><img src="/blog_images/Teacher_confusion_matrix.png"></td>
-    <td><img src="/blog_images/student_confusion_matrix.png"></td>
+    <td><img src="blog_images/Teacher_confusion_matrix.png"></td>
+    <td><img src="blog_images/student_confusion_matrix.png"></td>
   </tr>
 </table>
 
@@ -259,8 +259,8 @@ We also tested the performance of the student network in case one of the digits 
     <td align ="center">Student confusion matrix (no 3s in transfer set)</td>
   </tr>
   <tr>
-    <td><img src="/blog_images/Teacher_confusion_matrix.png"></td>
-    <td><img src="/blog_images/student_confusion_matrix_no3.png"></td>
+    <td><img src="blog_images/Teacher_confusion_matrix.png"></td>
+    <td><img src="blog_images/student_confusion_matrix_no3.png"></td>
   </tr>
 </table>
 
