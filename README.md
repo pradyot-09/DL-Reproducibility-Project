@@ -1,3 +1,8 @@
+---
+layout: default
+title: Deep Learning: Reproducibility Project
+---
+
 # Reproduction of “Distilling the Knowledge in a Neural Network”
 
 
