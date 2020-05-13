@@ -8,8 +8,9 @@ title: Deep Learning: Reproducibility Project
 
 
 ![Neural Networks](https://img.shields.io/badge/Neural%20Networks-Distillation-brightgreen)
-![Reproducibility](https://img.shields.io/badge/Reproducibility-Blog-blue)
+![Reproducibility](https://img.shields.io/badge/Reproducibility-Blog-blue)()
 
+[look](README.md)
 *Authors: Daniele Foffano, Pradyot Patil, Renzo Scholman*
 
 ## Introduction
