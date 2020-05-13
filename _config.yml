@@ -1,2 +1,9 @@
 theme: jekyll-theme-cayman
 title: Deep Learning Reproducibility Project
+
+plugins:
+  - jekyll-relative-links
+  
+relative_links:
+  enabled:     true
+  collections: false
