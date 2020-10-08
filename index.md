@@ -384,7 +384,7 @@ learning_rate = 0.01
 criterion = torch.nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(), lr= learning_rate, momentum=0.9)
 
-# Run over 100 epochs (1 epoch = visited all items in dataset)
+# Run over 1000 epochs (1 epoch = visited all items in dataset)
 for epoch in range(1000):
 
     running_loss = 0.0
@@ -449,8 +449,7 @@ with torch.no_grad():
         total += target.size(0)
         correct += (predicted == target).sum().item()
         for i, val in enumerate(predicted):
-          if val != target[i]:
-            wrong[target[i]][val] += 1
+          wrong[target[i]][val] += 1
 
 # Output model accuracy to user
 print('Accuracy of the network on the 10000 test images: %d %% (%d wrong out of %d)' % (
@@ -473,7 +472,7 @@ student_net.to(device)
 # Set up loss function and optimizer
 optimizer = optim.SGD(student_net.parameters(), lr=0.001, momentum=0.9)
 
-# Run over 100 epochs (1 epoch = visited all items in dataset)
+# Run over 1000 epochs (1 epoch = visited all items in dataset)
 for epoch in range(1000):
     running_loss = 0.0
     total = 0
@@ -537,8 +536,7 @@ with torch.no_grad():
         total += target.size(0)
         correct += (predicted == target).sum().item()
         for i, val in enumerate(predicted):
-          if val != target[i]:
-            wrong[target[i]][val] += 1
+          wrong[target[i]][val] += 1
 
 # Output model accuracy to user
 print('Accuracy of the network on the 10000 test images: %d %% (%d wrong out of %d)' % (
@@ -562,7 +560,7 @@ net.to(device)
 criterion = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(net.parameters(), lr=0.0001, weight_decay=0.00001)
 
-# Run over 100 epochs (1 epoch = visited all items in dataset)
+# Run over 1000 epochs (1 epoch = visited all items in dataset)
 for epoch in range(100):
     running_loss = 0.0
     total = 0
@@ -617,8 +615,7 @@ with torch.no_grad():
         total += target.size(0)
         correct += (predicted == target).sum().item()
         for i, val in enumerate(predicted):
-          if val != target[i]:
-            wrong[target[i]][val] += 1
+          wrong[target[i]][val] += 1
 
 
 # Output model accuracy to user
