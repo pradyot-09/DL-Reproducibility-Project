@@ -231,8 +231,8 @@ Hereunder we compare authors results and ours:
 
 | Model | Errors - Hinton et al. | Errors - Foffano, Patil, Scholman |
 |:------:|:-------------:|:------------------------:|
-|Teacher (1200 hidden units)| 67 | 64 |
-|Student (800 hidden units)| 74 | 67 |
+|Teacher (1200 hidden units)| 67 | 58 |
+|Student (800 hidden units)| 74 | 65 |
 
 We can also examine the confusion matrices of both our teacher and student model: the rows represent the correct label while the columns indicate the model prediction.
 
@@ -253,7 +253,7 @@ We also tested the performance of the student network in case one of the digits 
 
 | Model trained without digit number 3 | Errors - Hinton et al. | Errors - Foffano, Patil, Scholman |
 |:------:|:-------------:|:------------------------:|
-|Student (800 hidden units)| 206 (of which 133 are about digit 3) | 161 (of which 102 are about digit 3) |
+|Student (800 hidden units)| 206 (of which 133 are about digit 3) | 141 (of which 82 are about digit 3) |
 
 <table>
   <tr>
@@ -271,9 +271,9 @@ The results for the CNN can be seen in the table below. In this table we compare
 
 | Model | Errors | Epochs |
 |:------:|:-------------:|:------------------------:|
-|Teacher (1200 hidden units)| 64 | 1000 |
-|Student (800 hidden units)| 67 | 1000 |
-|CNN| 44 | 100 |
+|Teacher (1200 hidden units)| 58 | 1000 |
+|Student (800 hidden units)| 65 | 1000 |
+|CNN| 52 | 100 |
 
 
 For the CNN model we have also created a confusion matrix to see how this would compare to the FFN models:
